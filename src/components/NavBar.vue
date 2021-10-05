@@ -51,9 +51,6 @@
                   E-waste History
                 </a>
               </router-link>
-              <a class="navbar-item">
-                Points History
-              </a>
               <hr class="navbar-divider">
               <div class="has-text-centered">
                 <a class="button is-danger" @click="logout">
