@@ -329,7 +329,7 @@ export default {
                 .collection("collectors")
                 .doc(currentuserid)
                 .update({
-                  ongoing: "",
+                  ongoing: firebase.firestore.FieldValue.arrayRemove(jobId),
                   completed: firebase.firestore.FieldValue.arrayUnion(jobId),
                 })
                 .then((callback) => {
