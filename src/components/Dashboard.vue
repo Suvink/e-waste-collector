@@ -72,8 +72,8 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-for="(job, index) in ongoingjobs" v-bind:key="index" v-on:click="job.open = !job.open">
+            <tbody v-for="(job, index) in ongoingjobs" v-bind:key="index">
+              <tr >
                 <td>{{ job.ref.toString().substr(0, 7) }}</td>
                 <td>{{ job.itemCategory }}</td>
                 <td>{{ job.subCategory }}</td>
@@ -84,12 +84,62 @@
                 <td>
                   <button
                     class="button is-small is-warning hvr-pulse-grow"
+                    v-on:click="job.open = !job.open" 
                   >
                     <i v-if="job.open" class="fas fa-angle-down"></i>
                     <i v-if="!job.open" class="fas fa-angle-right"></i>
                   </button>
                 </td>
               </tr>
+              <tr>
+                <td colspan="8">
+                  <section class="mt-2" v-if="job.open">
+                    <div class="card ongoing-card">
+                      <h1 class="title is-4 ongoing-title">Update Job</h1>
+                      <div class="columns mt-1">
+                        <div class="column is-2"></div>
+                        <div class="column is-3 has-text-centered justify-content-center">
+                          <img
+                            src="https://nnimgt-a.akamaihd.net/transform/v1/crop/frm/fdcx/dc5syd-6pkhpem4t288etxj58g.jpg/r0_117_2111_1309_w1200_h678_fmax.jpg"
+                          />
+                        </div>
+                        <div class="column is-5 has-text-left">
+                          <p><b>Customer Name:</b> {{ job.customerName }}</p>
+                          <p><b>Customer Name:</b> {{ job.customerPhone }}</p>
+                          <p><b>Address:</b> {{ job.pickupAddress }}</p>
+                          <p><b>Item Category:</b> {{ job.itemCategory }}</p>
+                          <p><b>Sub Category:</b> {{ job.subCategory }}</p>
+                          <hr class="mb-1" />
+                          <div class="field">
+                            <label class="label">Enter Weight (in kg)</label>
+                            <div class="control field-control">
+                              <input
+                                class="input is-success"
+                                type="text"
+                                placeholder="Item weight in kilograms. Eg: 0.5"
+                                
+                                v-model="itemWeight"
+                                @input="job.weight=$event.target.value"
+                              />
+                            </div>
+                            <p class="help is-danger">{{ error }}</p>
+                          </div>
+                          <button class="button is-danger mt-1">Cancel</button>
+                          <button
+                            class="button is-success mt-1 ml-1"
+                            @click="completeJob(job)"
+                          >
+                            Mark as completed
+                          </button>
+                        </div>
+                        <div class="column is-2"></div>
+                      </div>
+                    </div>
+                  </section>
+                </td>
+              </tr>
+            </tbody>
+            <tbody>
               <tr v-if="this.ongoingjobs.length == '0'">
                 <td colspan="7" style="text-align: center">
                   There are no jobs available
@@ -100,52 +150,6 @@
         </div>
       </section>
 
-      <section class="mt-2">
-        <div v-for="(ongoingjob, index) in ongoingjobs" v-bind:key="index">
-          <div class="card ongoing-card">
-            <h1 class="title is-4 ongoing-title">Ongoing Job</h1>
-            <div class="columns mt-1">
-              <div class="column is-2"></div>
-              <div class="column is-3 has-text-centered justify-content-center">
-                <img
-                  src="https://nnimgt-a.akamaihd.net/transform/v1/crop/frm/fdcx/dc5syd-6pkhpem4t288etxj58g.jpg/r0_117_2111_1309_w1200_h678_fmax.jpg"
-                />
-              </div>
-              <div class="column is-5 has-text-left">
-                <p><b>Customer Name:</b> {{ ongoingjob.customerName }}</p>
-                <p><b>Customer Phone:</b> {{ ongoingjob.customerPhone }}</p>
-                <p><b>Address:</b> {{ ongoingjob.pickupAddress }}</p>
-                <p><b>Item Category:</b> {{ ongoingjob.itemCategory }}</p>
-                <p><b>Sub Category:</b> {{ ongoingjob.subCategory }}</p>
-                <hr class="mb-1" />
-                <div class="field">
-                  <label class="label">Enter Weight (in kg)</label>
-                  <div class="control field-control">
-                    <input
-                      class="input is-success"
-                      type="text"
-                      placeholder="Item weight in kilograms. Eg: 0.5"
-                      value=""
-                      v-model="itemWeight"
-                    />
-                  </div>
-                  <p class="help is-danger">{{ error }}</p>
-                </div>
-                <button class="button is-danger mt-1" @click="cancelJob()">
-                  Cancel
-                </button>
-                <button
-                  class="button is-success mt-1 ml-1"
-                  @click="completeJob()"
-                >
-                  Mark as completed
-                </button>
-              </div>
-              <div class="column is-2"></div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 </template>
@@ -288,11 +292,12 @@ export default {
       let currentuserid = thisState.userid;
       let ongoingid = thisState.ongoingjob.ref;
     },
-    completeJob: function() {
+    completeJob: function(job) {
+      console.log(job)
       let thisState = this;
       let currentuserid = thisState.userid;
-      let jobId = thisState.userdata.ongoing;
-      if (this.itemWeight == "" || this.itemWeight == 0) {
+      let jobId = job.ref;
+      if (job.weight == "" || job.weight == 0) {
         this.error = "Please add the item weight in Kilograms";
         return;
       }
@@ -301,9 +306,9 @@ export default {
         method: "post",
         url: "https://us-central1-ewaste-project.cloudfunctions.net/getPrice",
         data: {
-          weight: thisState.itemWeight,
-          category: thisState.ongoingjob.itemCategory,
-          subcategory: thisState.ongoingjob.subCategory,
+          weight: job.weight,
+          category: job.itemCategory,
+          subcategory: job.subCategory,
         },
       }).then((response) => {
         if (response.data.points && response.data.points != 0) {
@@ -315,7 +320,7 @@ export default {
             .update({
               status: "completed",
               points: thisState.itemPoints,
-              weight: thisState.itemWeight,
+              weight: job.weight,
             })
             .then((callback) => {
               //Remove the job from collector
@@ -332,7 +337,7 @@ export default {
                   firebaseApp
                     .firestore()
                     .collection("users")
-                    .doc(thisState.ongoingjob.customerId)
+                    .doc(job.customerId)
                     .update({
                       points: firebaseApp.firestore.FieldValue.arrayUnion(
                         thisState.itemPoints
