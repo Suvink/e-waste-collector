@@ -79,13 +79,23 @@ export default {
           thisState.userdata = doc.data()
         
         //Fetch jobs
-        firebaseApp.firestore().collection("jobs").where(
+        let completedJobs = thisState.userdata.completed;
+        let completedJobsArrLength = completedJobs.length/10;
+        let completedJobsArr = [];
+
+        for(let i=0; i<completedJobsArrLength; i++){
+          completedJobsArr.push(completedJobs.slice(i*10, (i+1)*10))
+        }
+
+        thisState.userjobs = [];
+
+        completedJobsArr.forEach((completedJobs) => {
+          firebaseApp.firestore().collection("jobs").where(
           firebase.firestore.FieldPath.documentId(),
           "in",
-          thisState.userdata.completed
+          completedJobs
         )
         .onSnapshot(callback =>{
-            thisState.userjobs = []
             callback.forEach(function(docs){
             //console.log(docs.id)
             if(docs.data().status == 'completed' ||docs.data().status == 'cancelled' ){
@@ -101,6 +111,7 @@ export default {
           console.log(error)
         }
         )
+        })
 
         })
       },
