@@ -12,50 +12,7 @@
         </div>
       </section>
 
-      <section class="mt-2" v-if="this.userdata.ongoing">
-        <div class="card ongoing-card">
-          <h1 class="title is-4 ongoing-title">Ongoing Job</h1>
-          <div class="columns mt-1">
-            <div class="column is-2"></div>
-            <div class="column is-3 has-text-centered justify-content-center">
-              <img
-                src="https://nnimgt-a.akamaihd.net/transform/v1/crop/frm/fdcx/dc5syd-6pkhpem4t288etxj58g.jpg/r0_117_2111_1309_w1200_h678_fmax.jpg"
-              />
-            </div>
-            <div class="column is-5 has-text-left">
-              <p><b>Customer Name:</b> {{ this.ongoingjob.customerName }}</p>
-              <p><b>Customer Name:</b> {{ this.ongoingjob.customerPhone }}</p>
-              <p><b>Address:</b> {{ this.ongoingjob.pickupAddress }}</p>
-              <p><b>Item Category:</b> {{ this.ongoingjob.itemCategory }}</p>
-              <p><b>Sub Category:</b> {{ this.ongoingjob.subCategory }}</p>
-              <hr class="mb-1" />
-              <div class="field">
-                <label class="label">Enter Weight (in kg)</label>
-                <div class="control field-control">
-                  <input
-                    class="input is-success"
-                    type="text"
-                    placeholder="Item weight in kilograms. Eg: 0.5"
-                    value=""
-                    v-model="itemWeight"
-                  />
-                </div>
-                <p class="help is-danger">{{ error }}</p>
-              </div>
-              <button class="button is-danger mt-1">Cancel</button>
-              <button
-                class="button is-success mt-1 ml-1"
-                @click="completeJob()"
-              >
-                Mark as completed
-              </button>
-            </div>
-            <div class="column is-2"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="mt-2" v-if="!this.userdata.ongoing">
+      <section class="mt-2">
         <h1 class="title is-4">Current Requests</h1>
         <div class=" container req-table has-text-centered">
           <table class="table is-fullwidth">
@@ -98,6 +55,97 @@
           </table>
         </div>
       </section>
+
+      <section class="mt-2">
+        <h1 class="title is-4">Ongoing Jobs</h1>
+        <div class=" container req-table has-text-centered">
+          <table class="table is-fullwidth">
+            <thead>
+              <tr>
+                <th>Request No.</th>
+                <th>Item Category</th>
+                <th>Sub Category</th>
+                <th>Address</th>
+                <th>Province</th>
+                <th>Time</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(job, index) in ongoingjobs" v-bind:key="index" v-on:click="job.open = !job.open">
+                <td>{{ job.ref.toString().substr(0, 7) }}</td>
+                <td>{{ job.itemCategory }}</td>
+                <td>{{ job.subCategory }}</td>
+                <td>{{ job.pickupAddress }}</td>
+                <td>{{ job.customerProvince }}</td>
+                <td>{{ job.time }}</td>
+                <td>{{ job.date }}</td>
+                <td>
+                  <button
+                    class="button is-small is-warning hvr-pulse-grow"
+                  >
+                    <i v-if="job.open" class="fas fa-angle-down"></i>
+                    <i v-if="!job.open" class="fas fa-angle-right"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="this.ongoingjobs.length == '0'">
+                <td colspan="7" style="text-align: center">
+                  There are no jobs available
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mt-2">
+        <div v-for="(ongoingjob, index) in ongoingjobs" v-bind:key="index">
+          <div class="card ongoing-card">
+            <h1 class="title is-4 ongoing-title">Ongoing Job</h1>
+            <div class="columns mt-1">
+              <div class="column is-2"></div>
+              <div class="column is-3 has-text-centered justify-content-center">
+                <img
+                  src="https://nnimgt-a.akamaihd.net/transform/v1/crop/frm/fdcx/dc5syd-6pkhpem4t288etxj58g.jpg/r0_117_2111_1309_w1200_h678_fmax.jpg"
+                />
+              </div>
+              <div class="column is-5 has-text-left">
+                <p><b>Customer Name:</b> {{ ongoingjob.customerName }}</p>
+                <p><b>Customer Phone:</b> {{ ongoingjob.customerPhone }}</p>
+                <p><b>Address:</b> {{ ongoingjob.pickupAddress }}</p>
+                <p><b>Item Category:</b> {{ ongoingjob.itemCategory }}</p>
+                <p><b>Sub Category:</b> {{ ongoingjob.subCategory }}</p>
+                <hr class="mb-1" />
+                <div class="field">
+                  <label class="label">Enter Weight (in kg)</label>
+                  <div class="control field-control">
+                    <input
+                      class="input is-success"
+                      type="text"
+                      placeholder="Item weight in kilograms. Eg: 0.5"
+                      value=""
+                      v-model="itemWeight"
+                    />
+                  </div>
+                  <p class="help is-danger">{{ error }}</p>
+                </div>
+                <button class="button is-danger mt-1" @click="cancelJob()">
+                  Cancel
+                </button>
+                <button
+                  class="button is-success mt-1 ml-1"
+                  @click="completeJob()"
+                >
+                  Mark as completed
+                </button>
+              </div>
+              <div class="column is-2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -115,7 +163,7 @@ export default {
       userdata: {},
       notify: false,
       notifyStatus: "",
-      ongoingjob: {},
+      ongoingjobs: [],
       userid: "",
       itemWeight: 0,
       error: "",
@@ -132,27 +180,31 @@ export default {
       .where("email", "==", loggedUserEmail)
       .onSnapshot(
         (querySnapshot) => {
-          console.log(querySnapshot.empty)
-          if(querySnapshot.empty === "true"){
+          console.log(querySnapshot.empty);
+          if (querySnapshot.empty === "true") {
             thisState.logout;
           }
           querySnapshot.forEach(function(doc) {
             thisState.userdata = doc.data();
             thisState.userid = doc.id.toString();
-            if (doc.data().ongoing !== "") {
-              let ongoingid = doc.data().ongoing;
+            if (doc.data().ongoing.length > 0) {
+              let ongoingids = doc.data().ongoing;
+              console.log(ongoingids);
               //If there is an ongoing job, fetch it
+              let ongoingJobsArr = [];
               firebaseApp
-                .firestore()
-                .collection("jobs")
-                .doc(ongoingid)
-                .onSnapshot(function(job) {
-                  if (job.exists) {
-                    thisState.ongoingjob = job.data();
-                  } else {
-                    console.log("Document does not exist");
-                  }
-                });
+              .firestore()
+              .collection("jobs")
+              .where(firebase.firestore.FieldPath.documentId(), "in", ongoingids)
+              .onSnapshot(
+                (querySnapshot) => {
+                  querySnapshot.forEach(function(doc) {
+                    ongoingJobsArr.push({ref: doc.id, ...doc.data(), open: false, weight: 0});
+                  });
+                  console.log(ongoingJobsArr);
+                  thisState.ongoingjobs = ongoingJobsArr;
+                }
+              );
             } else {
               thisState.getJobsList();
             }
@@ -164,12 +216,14 @@ export default {
       );
   },
   methods: {
-    logout: function(){
-        firebaseApp.auth().signOut()
+    logout: function() {
+      firebaseApp
+        .auth()
+        .signOut()
         .then(() => {
           this.isLoggedIn = false;
-          this.$router.push("/")
-        })
+          this.$router.push("/");
+        });
     },
     getJobsList: function() {
       let thisState = this;
@@ -179,7 +233,7 @@ export default {
         .where("status", "==", "pending")
         .onSnapshot(
           (callback) => {
-            console.log(callback)
+            console.log(callback);
             thisState.jobslist = [];
             callback.forEach(function(doc) {
               //Append document ID into job object
@@ -229,6 +283,11 @@ export default {
         });
       window.scrollTo(0, 0);
     },
+    cancelJob: function() {
+      let thisState = this;
+      let currentuserid = thisState.userid;
+      let ongoingid = thisState.ongoingjob.ref;
+    },
     completeJob: function() {
       let thisState = this;
       let currentuserid = thisState.userid;
@@ -256,7 +315,7 @@ export default {
             .update({
               status: "completed",
               points: thisState.itemPoints,
-              weight: thisState.itemWeight
+              weight: thisState.itemWeight,
             })
             .then((callback) => {
               //Remove the job from collector
@@ -275,7 +334,9 @@ export default {
                     .collection("users")
                     .doc(thisState.ongoingjob.customerId)
                     .update({
-                      points: thisState.itemPoints,
+                      points: firebaseApp.firestore.FieldValue.arrayUnion(
+                        thisState.itemPoints
+                      ),
                     })
                     .then((callback) => {
                       this.notify = true;
@@ -305,9 +366,9 @@ export default {
 <style scoped>
 @import url("../assets/css/style.css");
 
-.dashbody {
+/* .dashbody {
   height: 100vh !important;
-}
+} */
 
 /* Pulse Grow */
 @-webkit-keyframes hvr-pulse-grow {
